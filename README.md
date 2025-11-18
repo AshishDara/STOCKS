@@ -67,6 +67,21 @@ STOCKS/
 
 ### Backend Setup
 
+#### Configure Environment Variables
+1. Copy the example file and update values as needed:
+   ```bash
+   cd backend
+   cp env.example .env
+   ```
+2. Update `.env` with:
+   ```env
+   JWT_SECRET=your-super-secret-key
+   PORT=8080
+   DB_PATH=trading.db
+   ALLOWED_ORIGINS=http://localhost:3000
+   ```
+3. These values control the API port, database location, and allowed CORS origins for deployments. Leave `ALLOWED_ORIGINS` empty to allow all origins during local development.
+
 1. Navigate to the backend directory:
 ```bash
 cd backend
@@ -95,6 +110,19 @@ The backend server will start on `http://localhost:8080`
 - Password: `password123`
 
 ### Frontend Setup
+
+#### Configure Environment Variables
+1. Copy the example file:
+   ```bash
+   cd frontend
+   cp env.example .env
+   ```
+2. Update `.env` with your backend URLs:
+   ```env
+   VITE_API_URL=http://localhost:8080
+VITE_WS_URL=ws://localhost:8080/ws
+   ```
+3. When deploying, replace these values with your hosted backend and WebSocket URLs (e.g., `https://api.yourdomain.com` and `wss://api.yourdomain.com/ws`).
 
 1. Navigate to the frontend directory:
 ```bash

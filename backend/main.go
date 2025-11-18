@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
@@ -80,11 +81,15 @@ type Server struct {
 }
 
 // NewServer creates a new server instance
-func NewServer() *Server {
+func NewServer(dbPath string) *Server {
+	if dbPath == "" {
+		dbPath = "trading.db"
+	}
+
 	// Initialize database
-	db, err := gorm.Open(sqlite.Open("trading.db"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		log.Fatal("Failed to connect to database:", err)
+		log.Fatalf("Failed to connect to database (%s): %v", dbPath, err)
 	}
 
 	// Auto-migrate the schema
@@ -131,9 +136,19 @@ func main() {
 	// Get JWT secret from environment or use default
 	if secret := os.Getenv("JWT_SECRET"); secret != "" {
 		jwtSecret = []byte(secret)
+	} else {
+		jwtSecret = []byte("your-secret-key-change-in-production")
 	}
 
-	server := NewServer()
+	dbPath := os.Getenv("DB_PATH")
+
+	// Get port from environment
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	server := NewServer(dbPath)
 
 	// Start the price update goroutine
 	go server.updatePrices()
@@ -142,10 +157,22 @@ func main() {
 	r := gin.Default()
 
 	// CORS middleware
-	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
-	config.AllowMethods = []string{"GET", "POST", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Type", "Accept", "Authorization"}
+	config := cors.Config{
+		AllowMethods:     []string{"GET", "POST", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization"},
+		AllowCredentials: true,
+	}
+
+	if origins := strings.TrimSpace(os.Getenv("ALLOWED_ORIGINS")); origins != "" {
+		originList := strings.Split(origins, ",")
+		for i := range originList {
+			originList[i] = strings.TrimSpace(originList[i])
+		}
+		config.AllowOrigins = originList
+	} else {
+		config.AllowAllOrigins = true
+	}
+
 	r.Use(cors.New(config))
 
 	// Public routes
@@ -163,8 +190,8 @@ func main() {
 	}
 
 	// Start server
-	log.Println("Server starting on :8080")
-	if err := r.Run(":8080"); err != nil {
+	log.Printf("Server starting on :%s (DB: %s)", port, dbPath)
+	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
 	}
 }
