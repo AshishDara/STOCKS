@@ -28,7 +28,12 @@ function Login({ onLogin }) {
     const endpoint = isSignup ? '/api/signup' : '/api/login'
 
     try {
-      const response = await fetch(`${API_URL}${endpoint}`, {
+      // Normalize API_URL at call site
+const raw = API_URL || ''
+const base = raw.startsWith('http') ? raw.replace(/\/+$/, '') : `https://${raw.replace(/^\/+/, '')}`
+const url = `${base}${endpoint.startsWith('/') ? endpoint : '/' + endpoint}`
+
+const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
