@@ -1,0 +1,8 @@
+*.db
+*.sqlite
+*.sqlite3
+growtrade-server
+.env
+.git
+.gitignore
+
